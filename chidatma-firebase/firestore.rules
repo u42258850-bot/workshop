@@ -1,0 +1,41 @@
+// ============================================================
+// firestore.rules — FleetFlow Hub
+// Deploy: firebase deploy --only firestore:rules
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // All authenticated users can read any collection
+    // (This app uses role-based UI, not strict per-doc auth)
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    match /vehicles/{id} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /drivers/{id} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /trips/{id} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /maintenance_logs/{id} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /fuel_logs/{id} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+  }
+}

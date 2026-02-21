@@ -1,0 +1,66 @@
+// ============================================================
+// firestore.rules — FleetFlow India
+// Deploy: firebase deploy --only firestore:rules
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function hasRole(roles) {
+      return isAuthenticated() && getUserRole() in roles;
+    }
+
+    // ── USERS ─────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // ── VEHICLES ──────────────────────────────────────────────
+    match /vehicles/{vehicleId} {
+      allow read: if isAuthenticated();
+      allow create, update: if hasRole(['Fleet Manager', 'Dispatcher']);
+      allow delete: if hasRole(['Fleet Manager']);
+    }
+
+    // ── DRIVERS ───────────────────────────────────────────────
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow create, update: if hasRole(['Fleet Manager', 'Dispatcher']);
+      allow delete: if hasRole(['Fleet Manager']);
+    }
+
+    // ── TRIPS ─────────────────────────────────────────────────
+    match /trips/{tripId} {
+      allow read: if isAuthenticated();
+      allow create: if hasRole(['Fleet Manager', 'Dispatcher']);
+      allow update: if hasRole(['Fleet Manager', 'Dispatcher']);
+      allow delete: if hasRole(['Fleet Manager']);
+    }
+
+    // ── MAINTENANCE LOGS ──────────────────────────────────────
+    match /maintenance_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create, update: if hasRole(['Fleet Manager', 'Dispatcher']);
+      allow delete: if hasRole(['Fleet Manager']);
+    }
+
+    // ── EXPENSES ──────────────────────────────────────────────
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated();
+      allow create: if hasRole(['Fleet Manager', 'Financial Analyst']);
+      allow update, delete: if hasRole(['Fleet Manager']);
+    }
+  }
+}
